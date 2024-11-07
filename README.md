@@ -14,9 +14,30 @@ The motivation for this project arises from a deep interest in data-driven decis
 ![LSTM](https://img.shields.io/badge/LSTM%20Networks-4169E1?style=for-the-badge&logo=deep-learning&logoColor=white)
 ![RNN](https://img.shields.io/badge/RNN%20Networks-8A2BE2?style=for-the-badge&logo=neural&logoColor=white)
 
+## Safe Practices for Collaboration  
+To maintain code quality and collaboration standards, we follow these practices:
+
+- **Create a New Branch**: For each feature or fix, create a separate branch (e.g., `feature-xyz` or `bugfix-xyz`) rather than working directly on the `main` branch.
+  
+- **Avoid Direct Commits on Main**: Commit changes to the newly created branch. This keeps the `main` branch stable and minimizes the risk of unintentional errors.
+
+- **Pull Request (PR) Reviews**: When a feature or fix is complete, open a Pull Request (PR) from your branch to the `main` branch. Ensure the PR includes a description of changes, testing notes, and any specific requirements.
+
+- **Request a Code Review**: Have at least one team member review your code before merging it into the main branch. Constructive feedback and approval from others help to catch potential issues and improve code quality.
+
+- **Regular Pulls from Main**: Frequently pull the latest updates from `main` into your branch to avoid merge conflicts and ensure you are working with the most up-to-date code.
+
+- **Write Meaningful Commit Messages**: Use clear and descriptive commit messages for each change. This makes it easier to track changes and understand the purpose of each commit.
+
+- **Document Major Changes**: If your changes introduce new functionality, update the project documentation to reflect the modifications.
+
+Following these practices will help us maintain a smooth and productive workflow.
+
 ## Contributors  
 - [Ankit Arbind Sinha](https://github.com/Ank-22)
 - Ghaila Abu-Nowar  
 - Aathira Pillai  
 
 ---
+
+For more of my projects, please visit my [GitHub profile](https://github.com/Ank-22).
