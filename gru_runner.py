@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument("--epochs", type=int, help="Number of epochs for training.")
     parser.add_argument("--save_path", type=str, help="Path to save the best model.")
     parser.add_argument("--mode", type=str, choices=["train", "test"], default="train", help="Mode to run: train or test.")
-    parser.add_argument("--wandb_enable", action="store_true", help="Enable WandB logging.")
+    parser.add_argument("--wandb_enable", type=bool, default=False, help="Enable WandB logging.")
     parser.add_argument("--wandb_project", type=str, help="WandB project name.")
     parser.add_argument("--wandb_run_name", type=str, help="WandB run name.")
 
@@ -36,6 +36,7 @@ def main():
 
     # Load configuration
     config = load_config(args.config)
+    
 
     # Override configuration with command-line arguments if provided
     if args.csv_path:
@@ -57,6 +58,7 @@ def main():
     if args.wandb_run_name:
         config["wandb"]["run_name"] = args.wandb_run_name
 
+    print("Config : ", config)
     # Device setup
     device = torch.device("cuda" if config["device"]["use_cuda"] and torch.cuda.is_available() else "cpu")
 
@@ -85,6 +87,7 @@ def main():
 
     # Set WandB configuration if enabled
     wandb_config = None
+    print("config wandb enable :", config["wandb"]["enable"])
     if config["wandb"]["enable"]:
         wandb_config = {
             "project": config["wandb"]["project"],
@@ -97,6 +100,7 @@ def main():
     # Run training or testing
     if args.mode == "train":
         print("Training the model...")
+        print("wandb_config : ", wandb_config)
         trainer.run(train_loader, test_loader, wandb_config=wandb_config)
     elif args.mode == "test":
         print("Testing the model...")

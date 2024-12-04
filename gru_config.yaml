@@ -18,7 +18,7 @@ training:
 wandb:
   project: "gru-project"                 # WandB project name
   run_name: "gru-run"                    # WandB run name
-  enable: true                           # Enable or disable WandB logging
+  enable: false                           # Enable or disable WandB logging
 
 device:
-  use_cuda: true                         # Use CUDA if available
+  use_cuda: false                         # Use CUDA if available
