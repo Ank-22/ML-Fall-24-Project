@@ -7,27 +7,45 @@ import pandas as pd
 
 # Data Loader class
 class DataLoaderPreprocessor:
-    def __init__(self, csv_path, target_col, test_size=0.2, batch_size=32, random_state=42):
+    def __init__(self, csv_path, target_col, test_size=0.2, batch_size=32, random_state=42, window_size=50):
         self.csv_path = csv_path
         self.target_col = target_col
         self.test_size = test_size
         self.batch_size = batch_size
         self.random_state = random_state
+        self.window_size = window_size
         self.scaler = None
+
+    def create_sequences(self, data, target, window_size):
+        """Create input sequences and corresponding target values."""
+        sequences = []
+        targets = []
+        for i in range(len(data) - window_size):
+            seq = data[i : i + window_size]
+            label = target[i + window_size]
+            sequences.append(seq)
+            targets.append(label)
+        return torch.tensor(sequences, dtype=torch.float32), torch.tensor(targets, dtype=torch.float32).view(-1, 1)
 
     def load_and_preprocess(self):
         """Load and preprocess data."""
         data = pd.read_csv(self.csv_path)
-        X = data.drop(columns=[self.target_col]).values
+        data['Datetime'] = pd.to_datetime(data['Datetime'])
+        data.sort_values(by='Datetime', inplace=True)  # Ensure data is sorted by datetime
+        data.ffill(inplace=True)
+
+        feature_columns = [col for col in data.columns if col not in [self.target_col, 'Datetime', 'Delta_Target']]
+        X = data[feature_columns].values
         y = data[self.target_col].values
 
         # Scale features
         self.scaler = StandardScaler()
         X = self.scaler.fit_transform(X)
 
-        # Convert to PyTorch tensors
-        X = torch.tensor(X, dtype=torch.float32)
-        y = torch.tensor(y, dtype=torch.float32).view(-1, 1)
+        # Create sequences
+        X, y = self.create_sequences(X, y, self.window_size)
+        #print("X shape : ", X.shape)
+        #print("Y shape : ", y.shape)
 
         # Split into training and testing datasets
         X_train, X_test, y_train, y_test = train_test_split(
@@ -39,7 +57,8 @@ class DataLoaderPreprocessor:
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=self.batch_size, shuffle=True)
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=self.batch_size, shuffle=False)
 
-        return train_loader, test_loader, X.shape[1]
+        return train_loader, test_loader, X.shape[2]  # Return the number of features as input dimension
+
 
 
 class GRUTrainer:
@@ -89,11 +108,12 @@ class GRUTrainer:
             epoch_loss = 0
             for X_batch, y_batch in train_loader:
                 X_batch, y_batch = X_batch.to(self.device), y_batch.to(self.device)
+                
 
                 # Forward pass
-                outputs = self.model(X_batch.unsqueeze(1))
+                outputs = self.model(X_batch)
                 loss = self.criterion(outputs, y_batch)
-
+                print("loss : ", loss)
                 # Backward pass and optimization
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -102,6 +122,9 @@ class GRUTrainer:
                 epoch_loss += loss.item()
 
             # Calculate average loss and log it to WandB
+            print("train_loader len : ", len(train_loader))
+            print("epoch_loss : ", epoch_loss)
+            print("loss.item() : ", loss.item())
             avg_loss = epoch_loss / len(train_loader)
             wandb.log({"epoch": epoch + 1, "train_loss": avg_loss})
             print(f"Epoch {epoch+1}/{self.epochs}, Loss: {avg_loss:.4f}")
@@ -118,7 +141,7 @@ class GRUTrainer:
         with torch.no_grad():
             for X_batch, y_batch in test_loader:
                 X_batch, y_batch = X_batch.to(self.device), y_batch.to(self.device)
-                outputs = self.model(X_batch.unsqueeze(1))
+                outputs = self.model(X_batch)
                 predictions.extend(outputs.cpu().numpy())
                 actuals.extend(y_batch.cpu().numpy())
 
