@@ -2,6 +2,9 @@ import argparse
 import yaml
 import torch
 from gru_trainer import DataLoaderPreprocessor, GRUTrainer
+import wandb
+import random
+import numpy as np
 
 def load_config(config_path):
     """Load configuration from a YAML file."""
@@ -27,10 +30,23 @@ def parse_args():
     parser.add_argument("--wandb_enable", type=bool, default=False, help="Enable WandB logging.")
     parser.add_argument("--wandb_project", type=str, help="WandB project name.")
     parser.add_argument("--wandb_run_name", type=str, help="WandB run name.")
+    parser.add_argument("--load_path", type=str, help="Path to load the model for testing/continue training.")
 
     return parser.parse_args()
 
+
+def set_seed(seed):
+    """Set the seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
 def main():
+    SEED = 2
+    set_seed(SEED)
     # Parse command-line arguments
     args = parse_args()
 
@@ -62,29 +78,6 @@ def main():
     # Device setup
     device = torch.device("cuda" if config["device"]["use_cuda"] and torch.cuda.is_available() else "cpu")
 
-    # Load data
-    print("Loading data...")
-    data_loader = DataLoaderPreprocessor(
-        csv_path=config["data"]["csv_path"],
-        target_col=config["data"]["target_col"],
-        test_size=config["data"]["test_size"],
-        batch_size=config["data"]["batch_size"],
-        random_state=config["data"]["random_state"]
-    )
-    train_loader, test_loader, input_dim = data_loader.load_and_preprocess()
-
-    # Initialize the GRU trainer
-    print("Initializing GRU model...")
-    trainer = GRUTrainer(
-        input_dim=input_dim,
-        hidden_dim=config["model"]["hidden_dim"],
-        num_layers=config["model"]["num_layers"],
-        lr=config["training"]["lr"],
-        epochs=config["training"]["epochs"],
-        device=device,
-        save_path=config["training"]["save_path"]
-    )
-
     # Set WandB configuration if enabled
     wandb_config = None
     print("config wandb enable :", config["wandb"]["enable"])
@@ -96,17 +89,71 @@ def main():
             "hidden_dim": config["model"]["hidden_dim"],
             "learning_rate": config["training"]["lr"]
         }
+    if wandb_config:
+            wandb.init(
+                project=wandb_config.get("project", "gru-project"),
+                name=wandb_config.get("run_name", "gru-run"),
+                config=wandb_config
+            )
 
     # Run training or testing
     if args.mode == "train":
+        # Load data
+        print("Loading data...")
+        data_loader = DataLoaderPreprocessor(
+            csv_path=config["data"]["csv_path"],
+            target_col=config["data"]["target_col"],
+            test_size=config["data"]["test_size"],
+            batch_size=config["data"]["batch_size"]
+        )
+        train_loader, test_loader, input_dim = data_loader.load_and_preprocess()
+
+        
+        # Initialize the GRU trainer
+        print("Initializing GRU model...")
+        trainer = GRUTrainer(
+            input_dim=input_dim,
+            hidden_dim=config["model"]["hidden_dim"],
+            num_layers=config["model"]["num_layers"],
+            lr=config["training"]["lr"],
+            epochs=config["training"]["epochs"],
+            device=device,
+            save_path=config["training"]["save_path"]
+        )
         print("Training the model...")
-        print("wandb_config : ", wandb_config)
+
+        if args.load_path:
+            trainer.load(args.load_path)
         trainer.run(train_loader, test_loader, wandb_config=wandb_config)
+        
     elif args.mode == "test":
         print("Testing the model...")
-        predictions, actuals = trainer.evaluate(test_loader)
+        data_loader = DataLoaderPreprocessor(
+            csv_path=config["data"]["csv_path"],
+            target_col=config["data"]["target_col"],
+            batch_size=config["data"]["batch_size"],
+        )
+        test_loader, input_dim, data_datetime = data_loader.test_load()
+
+        trainer = GRUTrainer(
+            input_dim=input_dim,
+            hidden_dim=config["model"]["hidden_dim"],
+            num_layers=config["model"]["num_layers"],
+            lr=config["training"]["lr"],
+            epochs=config["training"]["epochs"],
+            device=device,
+            save_path=config["training"]["save_path"]
+        )
+        
+        if args.load_path:
+            trainer.load(args.load_path)
+        predictions, actuals = trainer.evaluate(test_loader, data_datetime)
         for i in range(10):  # Print first 10 results
             print(f"Predicted: {predictions[i][0]:.4f}, Actual: {actuals[i][0]:.4f}")
+    
+    
 
 if __name__ == "__main__":
     main()
+
+#  python .\gru_runner.py --csv_path="Dataset/INFY_DATA.csv" --target_col="Target"
