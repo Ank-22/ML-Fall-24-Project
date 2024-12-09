@@ -53,11 +53,12 @@ Mean Absolute Percentage Error (MAPE): 0.75%
 R² Score: 0.4483
 
 TCS : 
-Train - RMSE loss was around 67.8
-Test Loss: 184.6662
-Mean Absolute Error (MAE): 180.5320
-Mean Absolute Percentage Error (MAPE): 4.18%
-R² Score: -21.5870
+Train - RMSE loss was around 20.3
+Test Loss: 91.9158
+Mean Absolute Error (MAE): 84.0729
+Mean Absolute Percentage Error (MAPE): 1.94%
+R² Score: -4.5958
+Directional Accuracy: 48.41%
 
 WIPRO :
 Train - RMSE loss was around 1.2
