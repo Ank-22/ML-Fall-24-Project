@@ -1,7 +1,7 @@
 data:
   csv_path: "path_to_your_csv_file.csv"  # Path to the CSV file
   target_col: "target_column_name"       # Target column name
-  test_size: 0.2                         # Proportion of the dataset for testing
+  test_size: 0.2                    # Proportion of the dataset for testing
   batch_size: 32                         # Batch size for DataLoader
   random_state: 42                       # Random seed for reproducibility
 
@@ -11,8 +11,8 @@ model:
   output_dim: 1                          # Output dimension (for regression)
 
 training:
-  lr: 0.001                              # Learning rate for the optimizer
-  epochs: 50                             # Number of training epochs
+  lr: 0.01                              # Learning rate for the optimizer
+  epochs: 250                             # Number of training epochs
   save_path: "best_gru_model.pth"        # Path to save the best model
 
 wandb:
@@ -21,4 +21,4 @@ wandb:
   enable: false                           # Enable or disable WandB logging
 
 device:
-  use_cuda: false                         # Use CUDA if available
+  use_cuda: true                         # Use CUDA if available
