@@ -72,16 +72,84 @@ def evaluate_model(model, X_test, y_test):
     print(f"Test RMSE: {rmse:.4f}")
     return y_pred, rmse
 
+def save_combined_training_losses(model_with_early_stopping, model_without_early_stopping, title, filepath):
+    """Save combined training losses plot for early stopping and no early stopping."""
+    results_with_early_stopping = model_with_early_stopping.evals_result()
+    results_without_early_stopping = model_without_early_stopping.evals_result()
+
+    # Get training losses only
+    train_losses_with_early_stopping = results_with_early_stopping['validation_0']['rmse']
+    train_losses_without_early_stopping = results_without_early_stopping['validation_0']['rmse']
+
+    epochs_with_early_stopping = len(train_losses_with_early_stopping)
+    epochs_without_early_stopping = len(train_losses_without_early_stopping)
+
+    x_axis_with_early_stopping = range(0, epochs_with_early_stopping)
+    x_axis_without_early_stopping = range(0, epochs_without_early_stopping)
+
+    plt.figure(figsize=(10, 6))
+
+    # Plot training losses
+    plt.plot(
+        x_axis_with_early_stopping,
+        train_losses_with_early_stopping,
+        label="Train Loss (Early Stopping)"
+    )
+    plt.plot(
+        x_axis_without_early_stopping,
+        train_losses_without_early_stopping,
+        label="Train Loss (No Early Stopping)"
+    )
+
+    # Add labels, title, and legend
+    plt.legend()
+    plt.xlabel("Epochs")
+    plt.ylabel("RMSE")
+    plt.title(title)
+    plt.grid(True)
+
+    # Save the plot
+    plt.tight_layout()
+    plt.savefig(filepath)
+    plt.close()
+    print(f"Combined training losses plot saved to '{filepath}'.")
+
+
+def plot_actual_vs_predicted_combined(y_test, y_pred_early, y_pred_no_early, model_name, filepath):
+    """Plot Actual vs Predicted for Early Stopping and No Early Stopping."""
+    plt.figure(figsize=(12, 6))
+
+    # Plot actual values
+    plt.plot(y_test.values, label="Actual (Test Set)", alpha=0.7)
+
+    # Plot predictions with early stopping
+    plt.plot(y_pred_early, label="Predicted (Early Stopping)", alpha=0.7)
+
+    # Plot predictions without early stopping
+    plt.plot(y_pred_no_early, label="Predicted (No Early Stopping)", alpha=0.7)
+
+    # Add labels, title, and legend
+    plt.legend()
+    plt.xlabel("Index")
+    plt.ylabel("Value")
+    plt.title(f"Actual vs Predicted: Early Stopping vs No Early Stopping : {model_name}")
+    plt.grid(True)
+
+    # Save the plot
+    plt.tight_layout()
+    plt.savefig(filepath)
+    plt
+
 
 def plot_actual_vs_predicted_individual(y_test, y_pred, model_name, filepath):
 
     plt.figure(figsize=(12, 6))
 
     # Plot actual values
-    plt.plot(y_test.values, label="Actual (Test Set)",  alpha=0.7)
+    plt.plot(y_test.values, label="Actual",  alpha=0.7)
 
     # Plot predictions
-    plt.plot(y_pred, label=f"Predicted ({model_name})",  alpha=0.7)
+    plt.plot(y_pred, label=f"Predicted",  alpha=0.7)
 
     # Add labels, title, and legend
     plt.legend()
@@ -98,14 +166,14 @@ def plot_actual_vs_predicted_individual(y_test, y_pred, model_name, filepath):
 
 
 def save_plot_training_losses(model, title, filepath):
-    """Save training and validation losses plot as a file."""
+    """Save training losses plot as a file."""
     results = model.evals_result()
     epochs = len(results['validation_0']['rmse'])
     x_axis = range(0, epochs)
     
     plt.figure(figsize=(10, 6))
+    # Plot only training losses
     plt.plot(x_axis, results['validation_0']['rmse'], label='Train')
-    plt.plot(x_axis, results['validation_1']['rmse'], label='Validation')
     plt.legend()
     plt.xlabel('Epochs')
     plt.ylabel('RMSE')
@@ -113,7 +181,7 @@ def save_plot_training_losses(model, title, filepath):
     plt.grid(True)
     plt.savefig(filepath)
     plt.close()
-    print(f"Plot saved to '{filepath}'.")
+    print(f"Training losses plot saved to '{filepath}'.")
 
 
 def save_to_csv(data, filename):
@@ -216,7 +284,7 @@ def main():
             X_val,
             y_val,
             early_stopping_rounds=50,
-            n_estimators=100,
+            n_estimators=500,
             learning_rate=0.05,
             max_depth=3,
             colsample_bytree=0.88,
@@ -243,7 +311,7 @@ def main():
             X_val,
             y_val,
             early_stopping_rounds=None,
-            n_estimators=100,
+            n_estimators=500,
             learning_rate=0.05,
             max_depth=3,
             colsample_bytree=0.88,
@@ -282,6 +350,22 @@ def main():
             y_pred_no_early_stopping,
             f"{base_filename} (No Early Stopping)",
             os.path.join(output_dir, f"{base_filename}_actual_vs_predicted_no_early_stopping.png")
+        )
+
+        save_combined_training_losses(
+            model_with_early_stopping,
+            model_without_early_stopping,
+            f"Combined Training Losses ({base_filename})",
+            os.path.join(output_dir, f"{base_filename}_combined_training_losses.png")
+        )
+
+
+        # Save combined actual vs predicted plot
+        plot_actual_vs_predicted_combined(
+            y_test,
+            y_pred_early_stopping,
+            y_pred_no_early_stopping, base_filename,
+            os.path.join(output_dir, f"{base_filename}_actual_vs_predicted_combined.png")
         )
 
         # Save feature importance plots

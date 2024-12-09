@@ -120,22 +120,23 @@ def plot_actual_vs_predicted_individual(y_test, y_pred, model_name, filepath):
 
 # ---- Save Plot Functions ----
 def save_plot_training_losses(model, title, filepath):
-    """Save training and validation losses plot as a file."""
+    """Save training losses plot only (exclude validation losses)."""
     results = model.evals_result()
     epochs = len(results['validation_0']['rmse'])
     x_axis = range(0, epochs)
     
     plt.figure(figsize=(10, 6))
-    plt.plot(x_axis, results['validation_0']['rmse'], label='Train')
-    plt.plot(x_axis, results['validation_1']['rmse'], label='Validation')
+    # Plot only training losses
+    plt.plot(x_axis, results['validation_0']['rmse'], label='Train Loss', color='blue')
     plt.legend()
     plt.xlabel('Epochs')
     plt.ylabel('RMSE')
     plt.title(title)
     plt.grid(True)
+    plt.tight_layout()
     plt.savefig(filepath)
     plt.close()
-    print(f"Plot saved to '{filepath}'.")
+    print(f"Training losses plot saved to '{filepath}'.")
 
 # ---- Save Results Functions ----
 def save_to_csv(data, filename):
@@ -240,7 +241,7 @@ def main():
 
         # Train using default parameters
         print(f"Training with default parameters for {file_path}...")
-        default_model = train_model(X_train, y_train, X_val, y_val, early_stopping_rounds=50)
+        default_model = train_model(X_train, y_train, X_val, y_val, early_stopping_rounds=None)
         y_pred_default, rmse_default = evaluate_model(default_model, X_test, y_test)
 
         # Save plots for default parameters
@@ -265,7 +266,7 @@ def main():
             y_train,
             X_val,
             y_val,
-            early_stopping_rounds=10,
+            early_stopping_rounds=None,
             **best_params
         )
         y_pred_tuned, rmse_tuned = evaluate_model(tuned_model, X_test, y_test)
@@ -314,7 +315,7 @@ def main():
             y_train,
             X_val,
             y_val,
-            early_stopping_rounds=10,
+            early_stopping_rounds=None,
             **averaged_params
         )
         y_pred_averaged, rmse_averaged = evaluate_model(model_averaged, X_test, y_test)

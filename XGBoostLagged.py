@@ -15,9 +15,9 @@ FEATURE_COLUMNS = ['Open', 'Volume', 'PE_Ratio', '52_Week_High', '52_Week_Low',
                    'Maket_index', 'Sector_index', 'SMA_20', 'SMA_50', 'EMA_20',
                    'EMA_50', 'BB_upper', 'BB_lower', 'RSI', 'MACD']
 
+AVG_HYPERPARAMETERS = {'colsample_bytree': 0.8, 'learning_rate': 0.06, 'max_depth': 5, 'n_estimators': 240, 'subsample': 0.8}
 
-
-def load_and_preprocess_data(file_path, lag_features=None, num_lags=3, correlation_threshold=0.15):
+def load_and_preprocess_data(file_path, lag_features=None, num_lags=3, correlation_threshold=0.50):
 
     # Load data
     data = pd.read_csv(file_path)
@@ -49,13 +49,11 @@ def load_and_preprocess_data(file_path, lag_features=None, num_lags=3, correlati
 
     return features, target, data
 
-
-
 def split_data(features, target, test_size=0.2):
-    """Split data into train, validation, and test sets."""
-    X_train, X_temp, y_train, y_temp = train_test_split(features, target, test_size=0.3)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5)
-    return X_train, X_val, X_test, y_train, y_val, y_test
+    """Split data into train and test sets."""
+    X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=test_size, random_state=42)
+    return X_train, X_test, y_train, y_test
+
 
 def create_lagged_features(data, lag_features, num_lags=3):
  
@@ -67,32 +65,24 @@ def create_lagged_features(data, lag_features, num_lags=3):
     data_with_lags = data.dropna().reset_index(drop=True)
     return data_with_lags
 
-def get_highly_important_features(model, feature_names, threshold=0.15):
+def get_highly_important_features(model, feature_names, threshold=0.5):
 
     importance_scores = model.feature_importances_
     important_features = [feature_names[i] for i, score in enumerate(importance_scores) if score > threshold]
     return important_features
 
-def get_feature_importance(model, feature_names, threshold=0.05):
- 
-    importance_scores = model.feature_importances_
-    important_features = [feature_names[i] for i in range(len(feature_names)) if importance_scores[i] > threshold]
-    return important_features
 
-# ---- Model Training and Evaluation Functions ----
-def train_model(X_train, y_train, X_val, y_val, early_stopping_rounds=None, **kwargs):
-    """Train XGBoost model with or without early stopping."""\
+def train_model(X_train, y_train, **kwargs):
+    """Train XGBoost model without validation set."""
     
     model = XGBRegressor(
         random_state=42,
         eval_metric="rmse",
         **kwargs  # Pass additional hyperparameters
     )
-    eval_set = [(X_train, y_train), (X_val, y_val)]
     model.fit(
         X=X_train,
         y=y_train,
-        eval_set=eval_set,
         verbose=True
     )
     return model
@@ -163,7 +153,7 @@ def save_to_csv(data, filename):
     
     print(f"Data saved to '{filename}'.")
 
-def plot_feature_importance(model, feature_names, model_name, filepath):
+def plot_feature_importance(model, feature_names, dataset_name, filepath):
 
     # Get feature importance scores
     importance_scores = model.feature_importances_
@@ -178,7 +168,7 @@ def plot_feature_importance(model, feature_names, model_name, filepath):
     plt.barh(sorted_feature_names, sorted_importances, color="skyblue")
     plt.xlabel("Importance Score")
     plt.ylabel("Features")
-    plt.title(f"Feature Importance: {model_name}")
+    plt.title(f"Feature Importance: {dataset_name}")
     plt.grid(axis="x", linestyle="--", alpha=0.7)
 
     # Save the plot
@@ -240,17 +230,22 @@ def main():
         # Without lagged features
         print(f"Training without lagged features for {file_path}...")
         features, target, data = load_and_preprocess_data(file_path, lag_features=[], num_lags=0)  # No lagging
-        X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, target)
+        X_train, X_test, y_train, y_test = split_data(features, target)
 
-        model_nonlagged = train_model(X_train, y_train, X_val, y_val, early_stopping_rounds=10)
+        # Train baseline model
+        model_nonlagged = train_model(X_train, y_train, **AVG_HYPERPARAMETERS)
         _, rmse_nonlagged = evaluate_model(model_nonlagged, X_test, y_test)
+
+        # Select important features using threshold
+        print(f"Selecting important features for lagging based on importance threshold...")
+        important_features = get_highly_important_features(model_nonlagged, FEATURE_COLUMNS, threshold=0.25)
 
         # With lagged features
         print(f"Training with lagged features for {file_path}...")
-        features, target, data = load_and_preprocess_data(file_path, lag_features=FEATURE_COLUMNS, num_lags=3)  # Lagging
-        X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, target)
+        features, target, data = load_and_preprocess_data(file_path, lag_features=important_features, num_lags=5)  # Lagging only important features
+        X_train, X_test, y_train, y_test = split_data(features, target)
 
-        model_lagged = train_model(X_train, y_train, X_val, y_val, early_stopping_rounds=10)
+        model_lagged = train_model(X_train, y_train, **AVG_HYPERPARAMETERS)
         _, rmse_lagged = evaluate_model(model_lagged, X_test, y_test)
 
         # Store results
@@ -258,6 +253,15 @@ def main():
         rmse_results["Dataset"].append(dataset_name)
         rmse_results["RMSE (Non-Lagged)"].append(rmse_nonlagged)
         rmse_results["RMSE (Lagged)"].append(rmse_lagged)
+
+        # Plot feature importance for non-lagged model
+        importance_plot_path = os.path.join(output_dir, f"{dataset_name}_feature_importance.png")
+        plot_feature_importance(
+            model_nonlagged, 
+            features.columns, 
+            dataset_name, 
+            filepath=importance_plot_path
+        )
 
     # Save RMSE comparison for all datasets
     rmse_df = pd.DataFrame(rmse_results)
