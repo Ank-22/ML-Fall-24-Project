@@ -114,7 +114,7 @@ class GRUTrainer:
 
         def forward(self, x):
             h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(x.device)
-            out, _ = self.gru(x, h0)
+            out, _ = self.gru(x, h0) 
             out = self.fc(out[:, -1, :])
             return out    
 
@@ -191,7 +191,7 @@ class GRUTrainer:
         predictions = np.array(predictions)
         actuals = np.array(actuals)
         test_loss = self.criterion(torch.tensor(predictions), torch.tensor(actuals)).item()
-        
+        """
         # Calculate and log performance metrics
         mae = np.mean(np.abs(predictions - actuals))
         mape = np.mean(np.abs((predictions - actuals) / actuals)) * 100
@@ -216,7 +216,8 @@ class GRUTrainer:
         print(f"Mean Absolute Percentage Error (MAPE): {mape:.2f}%")
         print(f"R² Score: {r2_score:.4f}")
         print(f"Directional Accuracy: {directional_accuracy:.2f}%")
-
+        """
+        
         # Log predictions vs actuals to WandB
         wandb.log({"predictions_vs_actuals": wandb.Table(data=[[p, a] for p, a in zip(predictions, actuals)], 
                                                         columns=["Prediction", "Actual"])})

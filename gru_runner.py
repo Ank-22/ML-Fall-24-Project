@@ -45,7 +45,7 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
 
 def main():
-    SEED = 2
+    SEED = 42
     set_seed(SEED)
     # Parse command-line arguments
     args = parse_args()
