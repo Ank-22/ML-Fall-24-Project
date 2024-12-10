@@ -11,13 +11,13 @@ def plot_csv_data(csv_file):
 
     # Plot the data
     plt.figure(figsize=(10, 6))
-    plt.plot(x, df['Prediction'], label='Predictions', marker='o')
-    plt.plot(x, df['Actual'], label='Actuals', marker='x')
+    plt.plot(x, df['Prediction'], label='Predictions', linestyle='-')
+    plt.plot(x, df['Actual'], label='Actuals', linestyle='-')
     
     # Add labels, title, and legend
-    plt.xlabel("Per Minute")
+    plt.xlabel("Timestamp")
     plt.ylabel("Values")
-    plt.title("Predictions vs Actuals")
+    plt.title("Predictions vs Actuals (TCS)")
     plt.legend()
     
     # Show the plot
@@ -25,7 +25,7 @@ def plot_csv_data(csv_file):
     plt.show()
 
 # Example usage
-plot_csv_data("wandb_export_2024-12-08T18_28_16.854-05_00.csv")
+plot_csv_data("TCS_last_pred.csv")
 
 """
 OUTPUT :
