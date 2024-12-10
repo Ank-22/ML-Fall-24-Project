@@ -5,6 +5,11 @@ This research project aims to develop and evaluate machine learning models speci
 
 The motivation for this project arises from a deep interest in data-driven decision-making and the practical application of machine learning in complex, fast-changing domains like financial markets. Building on foundational insights from coursework and exploring real-world trading applications, this study will conduct a comparative analysis of multiple algorithms—namely, XGBoost, Gated Recurrent Units (GRU), and Long Short-Term Memory (LSTM) networks. By examining the strengths and limitations of each approach, we aim to enhance model selection and optimization strategies within high-frequency trading environments.
 
+## Implementations:
+- [XGBoost](https://github.com/Ank-22/ML-Fall-24-Project/tree/Ghalia)
+- [LSTM](https://github.com/Ank-22/ML-Fall-24-Project/tree/LSTM)
+- [GRU](https://github.com/Ank-22/ML-Fall-24-Project/tree/feature-GRU-predictor)
+
 ## Technology Stack  
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)
