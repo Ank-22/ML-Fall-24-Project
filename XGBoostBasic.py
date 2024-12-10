@@ -16,8 +16,6 @@ FEATURE_COLUMNS = ['Open', 'Volume', 'PE_Ratio', '52_Week_High', '52_Week_Low',
                    'EMA_50', 'BB_upper', 'BB_lower', 'RSI', 'MACD']
 
 
-
-# ---- Data Preprocessing Functions ----
 def load_and_preprocess_data(file_path):
     """Load data, fill missing values, and scale features."""
 
@@ -46,7 +44,7 @@ def split_data(features, target, test_size=0.2):
     X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5)
     return X_train, X_val, X_test, y_train, y_val, y_test
 
-# ---- Model Training and Evaluation Functions ----
+
 def train_model(X_train, y_train, X_val, y_val, early_stopping_rounds=None, **kwargs):
     """Train XGBoost model with or without early stopping."""
 

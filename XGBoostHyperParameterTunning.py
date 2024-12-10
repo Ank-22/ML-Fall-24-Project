@@ -15,7 +15,6 @@ FEATURE_COLUMNS = ['Open', 'Volume', 'PE_Ratio', '52_Week_High', '52_Week_Low',
                    'Maket_index', 'Sector_index', 'SMA_20', 'SMA_50', 'EMA_20',
                    'EMA_50', 'BB_upper', 'BB_lower', 'RSI', 'MACD']
 
-# ---- Data Preprocessing Functions ----
 def load_and_preprocess_data(file_path):
     """Load data, fill missing values, and scale features."""
     # Load data
@@ -42,21 +41,8 @@ def split_data(features, target, test_size=0.2):
     X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5)
     return X_train, X_val, X_test, y_train, y_val, y_test
 
-# ---- Model Training and Evaluation Functions ----
 def train_model(X_train, y_train, X_val, y_val, early_stopping_rounds=None, **kwargs):
-    """
-    Train XGBoost model with or without early stopping.
-    Accepts additional hyperparameters via **kwargs.
-    
-    Parameters:
-    - X_train, y_train: Training data and labels.
-    - X_val, y_val: Validation data and labels.
-    - early_stopping_rounds: Number of early stopping rounds.
-    - **kwargs: Additional hyperparameters for XGBoost.
-    
-    Returns:
-    - model: Trained XGBoost model.
-    """
+
     model = XGBRegressor(
         random_state=42,
         eval_metric="rmse",
@@ -118,7 +104,7 @@ def plot_actual_vs_predicted_individual(y_test, y_pred, model_name, filepath):
     plt.close()
     print(f"Index-based plot saved to '{filepath}'.")
 
-# ---- Save Plot Functions ----
+
 def save_plot_training_losses(model, title, filepath):
     """Save training losses plot only (exclude validation losses)."""
     results = model.evals_result()
@@ -138,7 +124,7 @@ def save_plot_training_losses(model, title, filepath):
     plt.close()
     print(f"Training losses plot saved to '{filepath}'.")
 
-# ---- Save Results Functions ----
+
 def save_to_csv(data, filename):
 
     if isinstance(data, pd.DataFrame):
@@ -177,8 +163,8 @@ def plot_feature_importance(model, feature_names, model_name, filepath):
 
 def plot_rmse_comparison(results_df, filepath):
 
-    x = np.arange(len(results_df['Company']))  # X positions for the companies
-    width = 0.25  # Width of each bar
+    x = np.arange(len(results_df['Company']))  
+    width = 0.25  
 
     plt.figure(figsize=(12, 6))
 
@@ -216,7 +202,7 @@ def plot_rmse_comparison(results_df, filepath):
     plt.xlabel("Company")
     plt.ylabel("RMSE")
     plt.title("RMSE Comparison: Default vs Tuned vs Averaged Parameters")
-    plt.xticks(x, results_df['Company'], rotation=45, ha="right")  # Rotate company names for readability
+    plt.xticks(x, results_df['Company'], rotation=45, ha="right") 
     plt.legend()
     plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
@@ -227,9 +213,9 @@ def plot_rmse_comparison(results_df, filepath):
     print(f"RMSE comparison plot saved to '{filepath}'.")
 
 def main():
-    all_best_params = []  # To store the best parameters for each company
-    results = []  # To store RMSE results for comparison
-    hyperparameter_results = []  # To store hyperparameter results
+    all_best_params = []  
+    results = []  
+    hyperparameter_results = []  
     output_dir = "results_hyperparameter_tunning"
     os.makedirs(output_dir, exist_ok=True)
 
@@ -284,14 +270,14 @@ def main():
             'Company': base_filename,
             'RMSE (Default)': rmse_default,
             'RMSE (Tuned)': rmse_tuned,
-            'RMSE (Averaged)': None  # Placeholder for now
+            'RMSE (Averaged)': None  
         })
 
         # Add tuned parameters to hyperparameter results
         hyperparameter_results.append({
             "Company": base_filename,
             "Tuned Parameters": best_params,
-            "Averaged Parameters": None  # Placeholder for now
+            "Averaged Parameters": None 
         })
 
     # Step 2: Calculate averaged parameters after all companies are processed
@@ -354,7 +340,7 @@ def main():
     tuned_averaged_params_df.to_csv(os.path.join(output_dir, "hyperparameter_results.csv"), index=False)
     print("Hyperparameter results saved to 'hyperparameter_results.csv'.")
 
-    # Optional: Plot RMSE comparison
+    # Plot RMSE comparison
     plot_rmse_comparison(results_df, os.path.join(output_dir, "rmse_comparison.png"))
 
 
